@@ -1,0 +1,20 @@
+# torch (CUDA 12.1) + ultralytics
+torch>=2.5
+torchvision>=0.20
+ultralytics>=8.3
+
+# OCR
+fast-plate-ocr[onnx]>=1.1
+
+# авторазметка
+transformers>=4.40
+accelerate
+
+# данные / метрики
+numpy
+pandas
+opencv-python-headless
+pillow
+
+# dev
+pytest

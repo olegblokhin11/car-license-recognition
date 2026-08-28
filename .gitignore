@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.build/
+
+# Данные и артефакты (кроме if git tracked)
+data/raw/images/
+data/raw/annotation/
+datasets/
+dataset_for_yolo/
+dataset_for_yolo_extended/
+dataset_for_yolo_extended_v2/
+runs/
+out/
+assets/*/best.pt
+assets/*.pt
+*.onnx
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Ultralytics требует settings — держим локально
