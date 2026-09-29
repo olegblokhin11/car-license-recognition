@@ -21,32 +21,20 @@ class ProjectConfig:
     """Конфигурация проекта: пути и ключевые гиперпараметры."""
 
     # --- пути ---
-    data_root: str = field(
-        default_factory=lambda: _env("PLATES_DATA_ROOT", "data/raw")
-    )
+    data_root: str = field(default_factory=lambda: _env("PLATES_DATA_ROOT", "data/raw"))
     annotation_file: str = field(
-        default_factory=lambda: _env(
-            "PLATES_ANNOTATION", "data/raw/annotation/train_annot.txt"
-        )
+        default_factory=lambda: _env("PLATES_ANNOTATION", "data/raw/annotation/train_annot.txt")
     )
-    images_dir: str = field(
-        default_factory=lambda: _env("PLATES_IMAGES", "data/raw/images")
-    )
-    yolo_root: str = field(
-        default_factory=lambda: _env("PLATES_YOLO_ROOT", "datasets")
-    )
-    assets_dir: str = field(
-        default_factory=lambda: _env("PLATES_ASSETS", "assets")
-    )
+    images_dir: str = field(default_factory=lambda: _env("PLATES_IMAGES", "data/raw/images"))
+    yolo_root: str = field(default_factory=lambda: _env("PLATES_YOLO_ROOT", "datasets"))
+    assets_dir: str = field(default_factory=lambda: _env("PLATES_ASSETS", "assets"))
     runs_dir: str = field(default_factory=lambda: _env("PLATES_RUNS", "runs"))
     output_dir: str = field(default_factory=lambda: _env("PLATES_OUTPUT", "out"))
 
     # --- параметры ---
     seed: int = 24
     split_val_fraction: float = 0.2
-    class_names: list = field(
-        default_factory=lambda: ["car_plate"]
-    )
+    class_names: list = field(default_factory=lambda: ["car_plate"])
     detection_imgsz: int = 960
     detection_conf: float = 0.25
     ocr_model: str = "cct-s-v2-global-model"

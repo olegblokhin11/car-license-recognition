@@ -2,7 +2,7 @@
 """Smoke-тест всего пайплайна (GPU) — детекция + OCR на малой выборке.
 
 Запуск:
-    python scripts/smoke_test.py --images data/raw/images/test --limit 20
+    python scripts/smoke_test.py --images data/raw/images/test --n 20
 
 Требует установленных тяжёлых зависимостей и наличия весов моделей.
 """
@@ -43,8 +43,7 @@ def main() -> int:
         dets = detector.predict(img, conf=args.conf, imgsz=args.imgsz)
         total_dets += len(dets)
     det_time = time.time() - t0
-    print(f"Детекция: {total_dets} боксов за {det_time:.1f}s "
-          f"({det_time/len(images):.2f}s/img)")
+    print(f"Детекция: {total_dets} боксов за {det_time:.1f}s ({det_time / len(images):.2f}s/img)")
 
     # 2) OCR
     t0 = time.time()
@@ -56,7 +55,7 @@ def main() -> int:
 
         cv_img = cv2.imread(str(img))
         for d in dets:
-            roi = cv_img[d.y1:d.y2, d.x1:d.x2]
+            roi = cv_img[d.y1 : d.y2, d.x1 : d.x2]
             if roi.size == 0:
                 continue
             raw = recognizer.recognize(roi)

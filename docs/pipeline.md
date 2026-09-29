@@ -1,4 +1,8 @@
-# Пайплайн: стадии, данные, API
+# Пайплайн: стадии и API
+
+Что делает каждая стадия, какими функциями и скриптами она представлена.
+Команды запуска и структура данных — в [README](../README.md), разбор
+экспериментов — в [analysis.md](analysis.md).
 
 ## Общая схема
 
@@ -18,89 +22,95 @@ raw annotation (train_annot.txt, Pascal-VOC боксы)
 [detection→predict]  инференс на test/ → predictions.txt (image_name,x1,y1,x2,y2,conf)
         │
         ▼
-[ocr]  fast_plate_ocr по ROI → plate текст + постобработка (chinese hack)
+[ocr]  fast_plate_ocr по ROI → текст номера + постобработка («китайский хак»)
         │
         ▼
-[evaluation]  CER / CRR / точных совпадений
+[evaluation]  CER / CRR (conditional и end-to-end) + mAP на val
 ```
-
-## Данные
-
-| Данные | Путь | Описание |
-|---|---|---|
-| Аннотация (трейн) | `data/raw/annotation/train_annot.txt` | 4511 номеров, 4074 изображения |
-| Train изображения | `data/raw/images/train/` | 4074 шт. |
-| Test изображения | `data/raw/images/test/` | 1343 шт. (без разметки) |
-| Не размечено | `data/raw/images/not_annotated/` | 3466 шт. |
-| YOLO-датасет №1 | `dataset_for_yolo/` | только ручная разметка |
-| YOLO-датасет №2 | `dataset_for_yolo_extended/` | + GroundingDINO conf 0.35 |
-| YOLO-датасет №3 | `dataset_for_yolo_extended_v2/` | + GroundingDINO conf 0.6 |
-
-Формат аннотации — CSV:
-`image_name,x_1,y_1,x_2,y_2,plate`
-Пара «номеров» на одно изображение — обычное явление (до 3 на ТС).
 
 ## Стадия 1: подготовка данных
 
-Код: `src/plates/data_prep/`.
+Код: `src/plates/data_prep/`, CLI — `scripts/prepare_data.py`.
 
-- `load_annotations()` — читает CSV, типизирует координаты.
-- `split_by_images()` — делит по уникальным изображениям (без утечки):
-  все номера одной машины в одну выборку.
+- `load_annotations()` — читает CSV `image_name,x_1,y_1,x_2,y_2,plate`,
+  типизирует координаты.
+- `split_by_images()` — делит по уникальным изображениям: все номера одной
+  машины попадают в одну выборку, утечки между train и val нет.
 - `build_yolo_dataset()` — копирует изображения, пишет YOLO-метки
   (нормализованные центральные xywh) и генерирует `data.yaml`.
+- `list_split_images()` / `filter_annotations_by_split()` — читают уже
+  собранный датасет: какие изображения попали в `images/val` (или `train`),
+  и оставляют из аннотаций только их. На них опирается честная оценка
+  на валидации.
+
+Одно изображение может содержать 2–3 номера — это учитывается на всех стадиях.
 
 ## Стадия 2: авторазметка
 
-Код: `src/plates/autolabel/grounding.py`.
+Код: `src/plates/autolabel/grounding.py`, CLI — `scripts/autolabel.py`.
 
-Использует zero-shot детектор `IDEA-Research/grounding-dino-tiny`
-с промптом `"license plate"`. Боксы фильтруются по уверенности
-(`conf`), расширяют train-часть. ВАЖНО: порог сильно влияет на чистоту
-датасета — 0.35 даёт много мусорных боксов, 0.6 — чище, но меньше
-покрытия. В `dataset_for_yolo_extended_v2` использован 0.6.
+Zero-shot детектор `IDEA-Research/grounding-dino-tiny` с промптом
+`"license plate"`. Найденные боксы фильтруются по уверенности и расширяют
+train-часть датасета. Порог сильно влияет на чистоту: conf 0.35 даёт много
+мусорных боксов, conf 0.6 — чище, но с меньшим покрытием.
 
 ## Стадия 3: детекция
 
-Код: `src/plates/detection/`.
+Код: `src/plates/detection/`, CLI — `scripts/train_detector.py`
+и `scripts/predict_detector.py`.
 
-- `build_model()` → YOLO из yaml + предобученные веса.
-- `train()` — обёртка над `ultralytics.YOLO.train()` (отдельные
-  конфиги: `configs/detection/default*.yaml`).
+- `build_model()` — YOLO из yaml-спеки (`configs/detection/yolo26m_ocr.yaml`,
+  один класс) плюс предобученные веса.
+- `train()` — обёртка над `ultralytics.YOLO.train()`; параметры обучения
+  задаются конфигами `configs/detection/default*.yaml`.
 - `YoloDetector.predict()` — инференс на одном изображении.
-
-Ключевые конфиги обучения:
-
-| Конфиг | имgsz | эпохи | Примечание |
-|---|---|---|---|
-| `default.yaml` | 640 | 100 | база (m) |
-| `default_little.yaml` | 640 | 50 | nano |
-| `default_little_ext.yaml` | 640 | 50 | nano+ext |
-| `default_little_ext_v2.yaml` | 640 | 50 | nano+ext_v2 |
-| `default_little_ext_v2_960.yaml` | 960 | 50 | nano+960 |
-| `default_ext_v2.yaml` | 640 | 100 | m+ext_v2 (лучший) |
 
 ## Стадия 4: OCR
 
-Код: `src/plates/ocr/`.
+Код: `src/plates/ocr/`, CLI — `scripts/run_ocr.py`.
 
-- `FastPlateRecognizer` — обёртка над `fast_plate_ocr`.
-- `recognize_images()` — вырезает ROI по боксам, распознаёт,
-  применяет постобработку.
-- `postprocess_plate()` — чистка + «китайский хак» (граничные номера
-  `粤X...港`).
+- `FastPlateRecognizer` — обёртка над `fast_plate_ocr` (ONNX Runtime).
+- `recognize_images()` — вырезает ROI по боксам, распознаёт, применяет
+  постобработку.
+- `postprocess_plate()` — чистка строки и «китайский хак»: граничные номера
+  вида `粤X…港` восстанавливаются по префиксу юрисдикции.
 
-## Стадия 5: метрики
+## Стадия 5: метрики и оценка
 
-Код: `src/plates/evaluation/metrics.py`.
+Код: `src/plates/evaluation/`.
 
-- `character_error_rate()` — CER по Левенштейну.
-- `summarize_crr()` — сводка CRR/CER/exact-match по батчу.
-- `evaluate_predictions()` — для списка `PlatePrediction`.
+`metrics.py` — сами метрики:
+
+- `character_error_rate()` — CER по расстоянию Левенштейна;
+- `summarize_crr()` — сводка CRR / CER / exact-match по батчу;
+- `evaluate_predictions()` — оценка списка `PlatePrediction`
+  (используется в `ocr/pipeline.py`).
+
+`pipeline_eval.py` — оценка системы целиком:
+
+- `box_iou()` / `match_boxes()` — IoU и жадное сопоставление детекций
+  с эталонами один-к-одному (порог IoU настраивается);
+- `build_eval_images()` — собирает выборку из аннотаций (группирует номера
+  по изображению, разрешает префиксы каталогов в `image_name`);
+- `evaluate_ocr_only()` — CER/CRR по **эталонным** боксам (потолок OCR);
+- `evaluate_pipeline()` — детекция + OCR, возвращает `PipelineMetrics`
+  с двумя версиями CRR:
+  - `end_to_end` — по всем эталонным номерам, пропуск детекции = ошибка;
+  - `conditional` — только по сматченным боксам (качество OCR при корректной
+    детекции);
+
+  плюс счётчики `n_matched` / `n_missed` / `n_false_positives` и
+  `detection_recall`.
+
+CLI: `scripts/eval_val.py` — единственная точка входа для оценки. Считает
+три фронта (mAP через `ultralytics.YOLO.val()`, OCR по эталонным боксам,
+полный пайплайн), первые два отключаются флагами `--skip-detection` /
+`--skip-ocr-only`, результат пишется в JSON по `--json`.
 
 ## Точки расширения
 
-- Новый OCR-бэкенд: реализовать `PlateRecognizer` (ABC) и добавить в
+- **Новый OCR-бэкенд**: реализовать `PlateRecognizer` (ABC) и добавить в
   `build_recognizer()`.
-- Экспорт YOLO в ONNX/TensorRT: в `detection/` можно добавить `export()`.
-- Оценка mAP: `ultralytics.YOLO.val()` уже даёт mAP на val-сплите.
+- **Экспорт YOLO в ONNX/TensorRT**: добавить `export()` в `detection/`.
+- **Новая метрика**: чистые функции в `evaluation/metrics.py`
+  (покрываются юнит-тестами без моделей и GPU).

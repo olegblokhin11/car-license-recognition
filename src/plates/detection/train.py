@@ -7,13 +7,16 @@ pretrained весов, запуск ``model.train(...)`` с конфигом.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # ultralytics — опциональная зависимость (extra "detection")
+    from ultralytics import YOLO
 
 
 def build_model(
     model_yaml: str | Path,
     pretrained_weights: str | Path | None = None,
-) -> "YOLO":
+) -> YOLO:
     """Загружает модель YOLO из yaml-спеки и, опционально, весов.
 
     Args:
@@ -34,12 +37,12 @@ def build_model(
 
 def train(
     data_yaml: str | Path,
-    cfg_yaml: Optional[str | Path] = None,
+    cfg_yaml: str | Path | None = None,
     model_yaml: str | Path = "yolo26m_ocr.yaml",
-    pretrained_weights: Optional[str | Path] = "yolo26m.pt",
-    device: Optional[int | str] = None,
-    project: Optional[str] = None,
-    name: Optional[str] = None,
+    pretrained_weights: str | Path | None = "yolo26m.pt",
+    device: int | str | None = None,
+    project: str | None = None,
+    name: str | None = None,
     **overrides,
 ):
     """Тренирует модель детекции.

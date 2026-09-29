@@ -4,7 +4,6 @@ import pytest
 
 from plates.utils.yolo import (
     format_label_line,
-    pascal_to_yolo,
     pascal_to_yolo_one,
     yolo_to_pascal_one,
 )

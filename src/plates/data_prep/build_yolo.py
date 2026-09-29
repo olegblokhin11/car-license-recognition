@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import logging
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +28,8 @@ from ..utils.io import ensure_dir
 from ..utils.yolo import format_label_line, pascal_to_yolo
 
 DEFAULT_CLASS_NAMES = ["car_plate"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -40,7 +43,7 @@ class YoloPaths:
     val_labels: Path
 
     @classmethod
-    def create(cls, dataset_root: str | Path) -> "YoloPaths":
+    def create(cls, dataset_root: str | Path) -> YoloPaths:
         dataset_root = Path(dataset_root)
         paths = cls(
             dataset=dataset_root,
@@ -92,7 +95,9 @@ def write_partition(
         label_dir: куда класть ``.txt`` аннотации.
 
     Returns:
-        Словарь ``{"processed": int, "boxes_written": int, "errors": list[str]}``.
+        Словарь ``{"processed": int, "errors": list[str]}``, где ``processed`` —
+        число записанных изображений, ``errors`` — сообщения о ненайденных
+        исходниках.
     """
     src_root = Path(image_source_dir)
     dst_images = ensure_dir(image_dir)
@@ -166,8 +171,22 @@ def build_yolo_dataset(
     train_stats = write_partition(
         train_df, image_source_dir, paths.train_images, paths.train_labels
     )
-    val_stats = write_partition(
-        val_df, image_source_dir, paths.val_images, paths.val_labels
-    )
+    val_stats = write_partition(val_df, image_source_dir, paths.val_images, paths.val_labels)
     write_data_yaml(paths.dataset, class_names)
+
+    logger.info(
+        "YOLO-датасет собран в %s: train %d изображений, val %d изображений",
+        paths.dataset,
+        train_stats["processed"],
+        val_stats["processed"],
+    )
+    for partition, stats in (("train", train_stats), ("val", val_stats)):
+        errors = stats["errors"]
+        if errors:
+            logger.warning(
+                "%s: не найдено исходников для %d изображений, например: %s",
+                partition,
+                len(errors),
+                ", ".join(errors[:5]),
+            )
     return paths

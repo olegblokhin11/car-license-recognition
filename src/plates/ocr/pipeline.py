@@ -10,14 +10,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
 
 from ..evaluation.metrics import summarize_crr
 from .postprocess import postprocess_plate
-from .recognizer import PlateRecognizer, build_recognizer
+from .recognizer import PlateRecognizer
 
 
 @dataclass
@@ -31,8 +30,8 @@ class PlatePrediction:
     y_2: int
     raw: str
     plate: str  # после постобработки
-    ground_truth: Optional[str] = None
-    cer: Optional[float] = None
+    ground_truth: str | None = None
+    cer: float | None = None
 
 
 def extract_roi(
@@ -89,7 +88,7 @@ def recognize_images(
     dir_ = Path(images_dir)
     preds: list[PlatePrediction] = []
 
-    for image_name, box in zip(image_names, boxes):
+    for image_name, box in zip(image_names, boxes, strict=True):
         path = dir_ / image_name
         if not path.exists():
             path = dir_ / Path(image_name).name

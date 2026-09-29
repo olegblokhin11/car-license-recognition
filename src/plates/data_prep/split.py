@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from pathlib import Path
 
 import pandas as pd
 
@@ -46,7 +47,7 @@ def split_by_images(
     rng = random.Random(seed)
     rng.shuffle(unique)
 
-    val_len = int(round(val_fraction * len(unique)))
+    val_len = round(val_fraction * len(unique))
     val_images = set(unique[:val_len])
     train_images = set(unique[val_len:])
 
@@ -55,14 +56,59 @@ def split_by_images(
     return train_df, val_df
 
 
-def split_statistics(
-    df: pd.DataFrame, train_df: pd.DataFrame, val_df: pd.DataFrame
-) -> SplitStats:
+def split_statistics(df: pd.DataFrame, train_df: pd.DataFrame, val_df: pd.DataFrame) -> SplitStats:
     """Подсчитывает статистику сплита для логирования."""
     return SplitStats(
         total_images=int(df["image_name"].nunique()),
         train_images=int(train_df["image_name"].nunique()),
         val_images=int(val_df["image_name"].nunique()),
-        train_annotations=int(len(train_df)),
-        val_annotations=int(len(val_df)),
+        train_annotations=len(train_df),
+        val_annotations=len(val_df),
     )
+
+
+def list_split_images(dataset_root: str | Path, split: str = "val") -> set[str]:
+    """Возвращает имена файлов раздела уже собранного YOLO-датасета.
+
+    Ожидается структура ``<dataset_root>/images/<split>/*.jpg``
+    (см. ``YoloPaths`` в ``build_yolo``).
+
+    Args:
+        dataset_root: корень собранного датасета.
+        split: имя раздела — ``"train"`` или ``"val"``.
+
+    Returns:
+        Множество имён файлов (basename) без путей.
+
+    Raises:
+        FileNotFoundError: если каталога раздела нет.
+    """
+    images_dir = Path(dataset_root) / "images" / split
+    if not images_dir.is_dir():
+        raise FileNotFoundError(f"Каталог раздела не найден: {images_dir}")
+    return {p.name for p in images_dir.iterdir() if p.is_file()}
+
+
+def filter_annotations_by_split(
+    df: pd.DataFrame,
+    dataset_root: str | Path,
+    split: str = "val",
+    image_col: str = "image_name",
+) -> pd.DataFrame:
+    """Оставляет аннотации только для изображений, попавших в раздел датасета.
+
+    Сопоставление идёт по имени файла (basename), поэтому префиксы каталогов
+    в колонке ``image_name`` (например ``train/000000_0.jpg``) не мешают.
+
+    Args:
+        df: датафрейм с аннотациями.
+        dataset_root: корень собранного YOLO-датасета.
+        split: имя раздела — ``"train"`` или ``"val"``.
+        image_col: колонка с именем изображения.
+
+    Returns:
+        Копия ``df`` со строками выбранного раздела.
+    """
+    names = list_split_images(dataset_root, split)
+    mask = df[image_col].map(lambda name: Path(str(name)).name in names)
+    return df[mask].copy()

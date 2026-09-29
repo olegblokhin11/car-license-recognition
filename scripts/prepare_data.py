@@ -27,7 +27,13 @@ from plates.data_prep import (
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--data-dir", dest="image_dir", type=str, default="data/raw/images", help="images root")
+    p.add_argument(
+        "--data-dir",
+        dest="image_dir",
+        type=str,
+        default="data/raw/images",
+        help="корень с исходными изображениями",
+    )
     p.add_argument(
         "--annotation",
         type=str,
@@ -47,18 +53,14 @@ def main() -> int:
     stats = dataset_statistics(df)
     print("Статистика:", stats)
 
-    train_df, val_df = split_by_images(
-        df, val_fraction=args.val_fraction, seed=args.seed
-    )
+    train_df, val_df = split_by_images(df, val_fraction=args.val_fraction, seed=args.seed)
     sp = split_statistics(df, train_df, val_df)
     print(
         f"Сплит: train {sp.train_images} img / {sp.train_annotations} ann, "
         f"val {sp.val_images} img / {sp.val_annotations} ann"
     )
 
-    build_yolo_dataset(
-        train_df, val_df, image_source_dir=args.image_dir, dataset_root=args.out
-    )
+    build_yolo_dataset(train_df, val_df, image_source_dir=args.image_dir, dataset_root=args.out)
     print(f"YOLO-датасет собран в: {Path(args.out).resolve()}")
     return 0
 

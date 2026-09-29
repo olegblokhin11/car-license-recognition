@@ -1,20 +1,23 @@
-# torch (CUDA 12.1) + ultralytics
-torch>=2.5
-torchvision>=0.20
-ultralytics>=8.3
+# Зависимости проекта. Ставятся одной командой:
+#   pip install -r requirements.txt
+# Версии зафиксированы по рабочему окружению (WSL, CUDA 12.1).
 
-# OCR
-fast-plate-ocr[onnx]>=1.1
+# torch + детекция
+# CUDA-сборка torch ставится отдельной командой (см. README, раздел «Установка»):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1
+torchvision==0.20.1
+ultralytics==8.4.131
 
-# авторазметка
-transformers>=4.40
-accelerate
+# OCR (fast_plate_ocr; в этом окружении также onnxruntime-gpu==1.29.0)
+fast-plate-ocr[onnx]==1.1.0
 
-# данные / метрики
-numpy
-pandas
-opencv-python-headless
-pillow
+# авторазметка (GroundingDINO)
+transformers==5.16.1
+accelerate==1.14.0
 
-# dev
-pytest
+# данные, метрики, изображения
+numpy==2.5.2
+pandas==3.0.5
+opencv-python-headless==5.0.0.93
+pillow==12.3.0

@@ -7,11 +7,14 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pandas as pd
 
 ANNOTATION_COLUMNS = ["image_name", "x_1", "y_1", "x_2", "y_2", "plate"]
+
+logger = logging.getLogger(__name__)
 
 
 def load_annotations(path: str | Path) -> pd.DataFrame:
@@ -43,9 +46,14 @@ def load_annotations(path: str | Path) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df["plate"] = df["plate"].astype(str)
 
-    n_boxes = len(df)
-    unique_images = df["image_name"].nunique()
-    n_invalid = int(df[["x_1", "y_1", "x_2", "y_2"]].isna().any(axis=1).sum())
+    invalid = int(df[["x_1", "y_1", "x_2", "y_2"]].isna().any(axis=1).sum())
+    if invalid:
+        logger.warning(
+            "В %d из %d строк координаты не удалось привести к числу (NaN). "
+            "Такие боксы попадут в YOLO-разметку как 'nan' — проверьте аннотацию.",
+            invalid,
+            len(df),
+        )
     return df
 
 
@@ -54,14 +62,13 @@ def dataset_statistics(df: pd.DataFrame) -> dict:
 
     Returns:
         Словарь: ``total_annotations``, ``total_images``,
-        ``plates_per_image`` (array), ``sample_boxes`` (float).
+        ``min_plates_per_image``, ``max_plates_per_image``,
+        ``mean_plates_per_image``, ``box_area_median``.
     """
     counts = df.groupby("image_name").size()
-    box_areas = (
-        (df["x_2"] - df["x_1"]) * (df["y_2"] - df["y_1"])
-    )
+    box_areas = (df["x_2"] - df["x_1"]) * (df["y_2"] - df["y_1"])
     return {
-        "total_annotations": int(len(df)),
+        "total_annotations": len(df),
         "total_images": int(df["image_name"].nunique()),
         "min_plates_per_image": int(counts.min() if len(counts) else 0),
         "max_plates_per_image": int(counts.max() if len(counts) else 0),

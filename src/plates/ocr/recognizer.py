@@ -1,7 +1,7 @@
 """Интерфейс распознавателя номеров.
 
 Основной вариант — fast_plate_ocr. Дополнительно описан ABC, чтобы
-в будущем подставлять другие модели (PaddleOCR, пер-char CNN и т.п.)
+в будущем подставлять другие модели (PaddleOCR, char CNN и т.п.)
 без изменения пайплайна оценки.
 """
 
@@ -40,7 +40,7 @@ class FastPlateRecognizer(PlateRecognizer):
         try:
             result = self._recognizer.run(roi)[0]
             return result.plate or ""
-        except Exception:  # noqa: BLE001 - OCR может падать на плохом кадре
+        except Exception:
             return ""
 
 

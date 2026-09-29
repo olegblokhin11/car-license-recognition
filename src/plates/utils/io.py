@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 import random
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
 
@@ -28,7 +28,7 @@ def set_seed(seed: int) -> None:
             torch.cuda.manual_seed_all(seed)
         if hasattr(torch, "mps") and torch.backends.mps.is_available():
             torch.mps.manual_seed(seed)
-    except Exception:  # noqa: BLE001 - torch не обязателен для чистых утилит
+    except Exception:
         pass
 
 
@@ -57,9 +57,7 @@ def copy_file(src: str | Path, dst: str | Path) -> None:
     shutil.copy2(src, dst)
 
 
-def copy_many(
-    files: Sequence[str | Path], dst_dir: str | Path
-) -> tuple[int, list[Path]]:
+def copy_many(files: Sequence[str | Path], dst_dir: str | Path) -> tuple[int, list[Path]]:
     """Копирует много файлов в одну директорию.
 
     Returns:

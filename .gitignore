@@ -16,13 +16,18 @@ runs/
 out/
 assets/*/best.pt
 assets/*.pt
+weights/
 *.onnx
 .pytest_cache/
+.ruff_cache/
 
 # Jupyter
 .ipynb_checkpoints/
 
 # OS
 .DS_Store
+
+# Локальные заметки автора (история замеров, хеши чекпойнтов) — не публикуются
+LOCAL_NOTES.md
 
 # Ultralytics требует settings — держим локально

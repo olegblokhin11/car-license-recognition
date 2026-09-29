@@ -45,5 +45,3 @@ def test_summarize():
     # ABC123==ABC123 (0), XYZ789 vs XQZ789 (1/6), abc123 vs ABC123 (0 после upper)
     assert res.exact_matches == 2
     assert res.cer == pytest.approx((0 + 1 / 6 + 0) / 3)
-
-

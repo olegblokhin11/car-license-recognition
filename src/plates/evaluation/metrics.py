@@ -8,8 +8,8 @@ CER (Character Error Rate) и CRR (Character Recognition Rate) —
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 _INVALID_CHARS = re.compile(r"[\W_]", re.UNICODE)
 
@@ -95,7 +95,7 @@ def summarize_crr(
     """
     result = CRRResult()
 
-    for gt_raw, pred_raw in zip(ground_truths, predictions):
+    for gt_raw, pred_raw in zip(ground_truths, predictions, strict=True):
         cerr = character_error_rate(gt_raw, pred_raw)
         result.total += 1
         result.total_cer += cerr

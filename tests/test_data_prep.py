@@ -2,8 +2,6 @@
 
 import cv2
 import numpy as np
-import pandas as pd
-import pytest
 
 from plates.data_prep import build_yolo_dataset, load_annotations, split_by_images
 from plates.utils.yolo import (
@@ -36,7 +34,7 @@ def _make_fixture(tmp_path):
 
 
 def test_load_and_split(tmp_path):
-    img_root, annot = _make_fixture(tmp_path)
+    _, annot = _make_fixture(tmp_path)
     df = load_annotations(annot)
     assert len(df) == 3
     assert df["image_name"].unique().tolist() == ["a.jpg", "b.jpg"]

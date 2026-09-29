@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 Number = float
 BoxPascal = Sequence[float]  # (x1, y1, x2, y2)
@@ -42,16 +42,12 @@ def pascal_to_yolo_one(box: BoxPascal, img_w: int, img_h: int) -> BoxYolo:
     return (x_center, y_center, width, height)
 
 
-def pascal_to_yolo(
-    boxes: Iterable[BoxPascal], img_w: int, img_h: int
-) -> list[BoxYolo]:
+def pascal_to_yolo(boxes: Iterable[BoxPascal], img_w: int, img_h: int) -> list[BoxYolo]:
     """Конвертирует список боксов Pascal VOC в список боксов YOLO."""
     return [pascal_to_yolo_one(box, img_w, img_h) for box in boxes]
 
 
-def yolo_to_pascal_one(
-    box: BoxYolo, img_w: int, img_h: int
-) -> tuple[int, int, int, int]:
+def yolo_to_pascal_one(box: BoxYolo, img_w: int, img_h: int) -> tuple[int, int, int, int]:
     """Конвертирует один YOLO-бокс обратно в абсолютный Pascal VOC.
 
     Возвращает целые пиксельные координаты ``(x1, y1, x2, y2)``.
@@ -64,15 +60,10 @@ def yolo_to_pascal_one(
     return x1, y1, x2, y2
 
 
-def format_label_line(
-    box: BoxYolo, class_id: int = 0, precision: int = 6
-) -> str:
+def format_label_line(box: BoxYolo, class_id: int = 0, precision: int = 6) -> str:
     """Форматирует YOLO-бокс в строку файла аннотации.
 
     Выходит строка вида ``"<class_id> <xc> <yc> <w> <h>\\n"``.
     """
     xc, yc, w, h = box
-    return (
-        f"{class_id} {xc:.{precision}f} {yc:.{precision}f} "
-        f"{w:.{precision}f} {h:.{precision}f}\n"
-    )
+    return f"{class_id} {xc:.{precision}f} {yc:.{precision}f} {w:.{precision}f} {h:.{precision}f}\n"

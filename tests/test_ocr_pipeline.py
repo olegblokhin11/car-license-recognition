@@ -1,9 +1,8 @@
 """Тест OCR-пайплайна с mock-распознавателем (без тяжёлых зависимостей)."""
 
 import numpy as np
-import pytest
 
-from plates.ocr import build_recognizer, recognize_images
+from plates.ocr import recognize_images
 from plates.ocr.recognizer import PlateRecognizer
 
 
@@ -50,8 +49,6 @@ def test_extract_roi_expand(tmp_path):
 
 def test_recognize_images_no_x(tmp_path):
     rec = FakeRecognizer()
-    preds = recognize_images(
-        str(tmp_path), ["missing.jpg"], [(0, 0, 10, 10)], rec
-    )
+    preds = recognize_images(str(tmp_path), ["missing.jpg"], [(0, 0, 10, 10)], rec)
     assert len(preds) == 1
     assert preds[0].plate == ""

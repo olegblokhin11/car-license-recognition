@@ -41,7 +41,7 @@ class YoloDetector:
 
         xyxy = results.boxes.xyxy.cpu().numpy()
         confs = results.boxes.conf.cpu().numpy()
-        for box, c in zip(xyxy, confs):
+        for box, c in zip(xyxy, confs, strict=True):
             x1, y1, x2, y2 = (int(v) for v in box)
             boxes.append(DetectionBox(x1, y1, x2, y2, float(c)))
         return boxes

@@ -65,7 +65,6 @@ def main() -> int:
             roi = img[y1:y2, x1:x2]
             if roi.size == 0:
                 continue
-            import numpy as np
 
             roi_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
             raw = recognizer.recognize(roi_rgb)

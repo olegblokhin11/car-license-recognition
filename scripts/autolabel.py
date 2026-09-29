@@ -47,8 +47,7 @@ def main() -> int:
         text_threshold=args.text_threshold,
     )
     print(
-        f"Обработано изображений: {stats.processed_images}, "
-        f"найдено номеров: {stats.found_plates}"
+        f"Обработано изображений: {stats.processed_images}, найдено номеров: {stats.found_plates}"
     )
     for e in stats.errors[:20]:
         print("  ОШИБКА:", e)

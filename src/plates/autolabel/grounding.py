@@ -46,7 +46,6 @@ class GroundingLabeler:
     def _lazy_load(self) -> None:
         if self._loaded:
             return
-        import torch
         from accelerate import Accelerator
         from PIL import Image
         from transformers import (
@@ -56,9 +55,7 @@ class GroundingLabeler:
 
         dev = Accelerator().device if self._device == "auto" else self._device
         self._processor = AutoProcessor.from_pretrained(self.model_id)
-        self._model = AutoModelForZeroShotObjectDetection.from_pretrained(
-            self.model_id
-        ).to(dev)
+        self._model = AutoModelForZeroShotObjectDetection.from_pretrained(self.model_id).to(dev)
         self._Image = Image
         self._device = dev
         self._loaded = True
@@ -87,7 +84,7 @@ class GroundingLabeler:
         )[0]
 
         boxes: list[list[float]] = []
-        for box, score in zip(result["boxes"], result["scores"]):
+        for box, score in zip(result["boxes"], result["scores"], strict=True):
             if float(score) >= self.conf_threshold:
                 x1, y1, x2, y2 = [float(v) for v in box.tolist()]
                 boxes.append([x1, y1, x2, y2])
@@ -145,7 +142,7 @@ def label_images(
     for img_path in new_imgs:
         try:
             boxes = labeler.annotate_image(img_path)
-        except Exception as exc:  # noqa: BLE001 - продолжаем дальше по папке
+        except Exception as exc:
             errors.append(f"{img_path.name}: {exc}")
             continue
 
