@@ -21,12 +21,14 @@ import logging
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from ..ocr.pipeline import recognize_images
-from ..ocr.recognizer import PlateRecognizer
 from .metrics import CRRResult, summarize_crr
+
+if TYPE_CHECKING:
+    from ..ocr.recognizer import PlateRecognizer
 
 Box = tuple[float, float, float, float]
 
@@ -217,6 +219,10 @@ def evaluate_pipeline(
     Returns:
         ``PipelineMetrics`` с метриками ``conditional`` и ``end_to_end``.
     """
+    # Ленивый импорт: ``ocr.pipeline`` импортирует ``evaluation.metrics``, а это
+    # выполняет ``evaluation/__init__`` — импорт на уровне модуля дал бы цикл.
+    from ..ocr.pipeline import recognize_images
+
     images = list(images)
     metrics = PipelineMetrics(n_images=len(images))
     cond_gt: list[str] = []
@@ -277,6 +283,8 @@ def evaluate_ocr_only(
     Returns:
         ``CRRResult`` по всем эталонным номерам выборки.
     """
+    from ..ocr.pipeline import recognize_images  # ленивый импорт, см. evaluate_pipeline
+
     gt: list[str] = []
     pred: list[str] = []
     for item in images:

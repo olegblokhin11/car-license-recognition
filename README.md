@@ -1,5 +1,7 @@
 # Распознавание автомобильных номеров (Гонконг / Китай / Макао)
 
+[![CI](https://github.com/olegblokhin11/car-license-recognition/actions/workflows/ci.yml/badge.svg)](https://github.com/olegblokhin11/car-license-recognition/actions/workflows/ci.yml)
+
 Финальный проект курса: автоматическая система детекции и распознавания
 автомобильных номеров на кропах транспортных средств. Два подзадачи:
 
@@ -69,6 +71,11 @@ pytest -q
 ruff check src scripts tests     # линт
 ruff format src scripts tests    # форматирование
 ```
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) на каждый пуш и PR прогоняет
+линт, юнит-тесты и smoke-проверку CLI (`--help` каждого скрипта). Обучение,
+инференс на GPU и оценка качества в CI не запускаются: для них нужны веса
+и датасет, которых в репозитории нет.
 
 ## Данные
 

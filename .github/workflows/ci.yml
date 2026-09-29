@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Версия та же, что в requirements-dev.txt: CI и локальный прогон должны совпадать.
+      - name: Install ruff
+        run: pip install ruff==0.16.9
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # Юнит-тесты покрывают чистые части пакета (метрики, сплит, постобработку,
+      # сборку YOLO-датасета, сопоставление боксов). Тяжёлые зависимости —
+      # torch, ultralytics, fast_plate_ocr, transformers — в пакете импортируются
+      # лениво, поэтому полный requirements.txt на CPU-раннере не нужен.
+      - name: Install test dependencies
+        run: pip install pytest==9.1.1 numpy==2.5.2 pandas==3.0.5 opencv-python-headless==5.0.0.93
+
+      - name: Run tests
+        run: pytest -q
+
+      # Ловит ошибки, невидимые юнит-тестам: например циклический импорт,
+      # из-за которого скрипт не запускается вообще.
+      - name: CLI smoke test (--help)
+        run: |
+          for script in scripts/*.py; do
+            echo "::group::$script"
+            python "$script" --help > /dev/null
+            echo "::endgroup::"
+          done
+
+      # Обучение, инференс на GPU и оценка качества требуют весов и датасета,
+      # которых нет в репозитории, — в CI они не прогоняются.
