@@ -44,11 +44,14 @@ jobs:
           cache: pip
 
       # Юнит-тесты покрывают чистые части пакета (метрики, сплит, постобработку,
-      # сборку YOLO-датасета, сопоставление боксов). Тяжёлые зависимости —
-      # torch, ultralytics, fast_plate_ocr, transformers — в пакете импортируются
-      # лениво, поэтому полный requirements.txt на CPU-раннере не нужен.
+      # сборку YOLO-датасета, сопоставление боксов, логику демо). Тяжёлые
+      # зависимости — torch, ultralytics, fast_plate_ocr, transformers — в пакете
+      # импортируются лениво, поэтому полный requirements.txt на CPU-раннере не
+      # нужен; streamlit стоит только ради smoke-тестов демо (tests/test_app.py).
       - name: Install test dependencies
-        run: pip install pytest==9.1.1 numpy==2.5.2 pandas==3.0.5 opencv-python-headless==5.0.0.93
+        run: >
+          pip install pytest==9.1.1 numpy==2.5.2 pandas==3.0.5
+          opencv-python-headless==5.0.0.93 streamlit==1.64.0
 
       - name: Run tests
         run: pytest -q
